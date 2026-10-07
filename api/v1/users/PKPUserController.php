@@ -178,6 +178,7 @@ class PKPUserController extends PKPBaseController
             'roleIds',
             'searchPhrase',
             'status',
+            'userGroupIds',
         ]);
 
         $params['contextId'] = $context->getId();
@@ -210,6 +211,7 @@ class PKPUserController extends PKPBaseController
         $collector->assignedTo($params['assignedToSubmission'] ?? null, $params['assignedToSubmissionStage'] ?? null)
             ->assignedToSectionIds(isset($params['assignedToSection']) ? [$params['assignedToSection']] : null)
             ->assignedToCategoryIds(isset($params['assignedToCategory']) ? [$params['assignedToCategory']] : null)
+            ->filterByUserGroupIds($params['userGroupIds'] ?? null)
             ->filterByRoleIds($params['roleIds'] ?? null)
             ->searchPhrase($params['searchPhrase'] ?? null)
             ->orderBy($orderBy, $orderDirection, [Locale::getLocale(), Application::get()->getRequest()->getSite()->getPrimaryLocale()])
@@ -543,6 +545,7 @@ class PKPUserController extends PKPBaseController
                     // Always convert roleIds to array
                 case 'reviewerIds':
                 case 'roleIds':
+                case 'userGroupIds':
                     if (is_string($val)) {
                         $val = explode(',', $val);
                     } elseif (!is_array($val)) {
