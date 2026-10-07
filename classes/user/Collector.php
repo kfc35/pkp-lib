@@ -70,6 +70,7 @@ class Collector implements CollectorInterface
     public ?array $assignedCategoryIds = null;
     public ?array $settings = null;
     public ?string $searchPhrase = null;
+    public ?array $userGroupSettingPhrases = null;
     public ?array $excludeSubmissionStage = null;
     public ?array $excludeUserGroupIds = null;
     public ?array $assignedTo = null;
@@ -372,6 +373,15 @@ class Collector implements CollectorInterface
     }
 
     /**
+     * Limit results to users whose roles match any of these phrases
+     */
+    public function filterByUserGroupSettingPhrases(?array $phrases): self
+    {
+        $this->userGroupSettingPhrases = $phrases;
+        return $this;
+    }
+
+    /**
      * Order the results
      *
      * @param string $sorter One of the self::ORDERBY_ constants
@@ -492,7 +502,8 @@ class Collector implements CollectorInterface
             $this->roleIds === null &&
             $this->contextIds === null &&
             $this->workflowStageIds === null &&
-            $this->userMastheadStatus === UserMastheadStatus::STATUS_ALL
+            $this->userMastheadStatus === UserMastheadStatus::STATUS_ALL &&
+            $this->userGroupSettingPhrases === null
         ) {
             return $this;
         }
@@ -551,6 +562,13 @@ class Collector implements CollectorInterface
                     $subQuery->where('ug.masthead', 0)
                         ->orWhere('uug.masthead', 1)
                         ->orWhereNull('uug.masthead')
+            )
+            ->when(
+                $this->userGroupSettingPhrases !== null,
+                fn (Builder $subQuery) => $subQuery
+                    ->join('user_group_settings AS ugsettings', 'ug.user_group_id', '=', 'ugsettings.user_group_id')
+                    ->where('ugs.setting_name', '=', 'name')
+                    ->whereIn('ugs.setting_value', $this->userGroupSettingPhrases)
             );
 
         $query->whereExists($subQuery);
